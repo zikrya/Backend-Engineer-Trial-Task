@@ -1,6 +1,6 @@
 import requests
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 from stocks_app.models import StockData
 from dotenv import load_dotenv
 
@@ -31,31 +31,35 @@ class FinancialDataService:
 
             time_series = data['Time Series (Daily)']
 
+            # 2 years ago from today
+            two_years_ago = datetime.now().date() - timedelta(days=730)
+
             stock_data_list = []
 
             for date_str, price_data in time_series.items():
                 date = datetime.strptime(date_str, '%Y-%m-%d').date()
 
-                stock_data, created = StockData.objects.update_or_create(
-                    stock_symbol=symbol,
-                    date=date,
-                    defaults={
-                        'open_price': price_data['1. open'],
-                        'close_price': price_data['4. close'],
-                        'high_price': price_data['2. high'],
-                        'low_price': price_data['3. low'],
-                        'volume': price_data['5. volume'],
-                    }
-                )
+                if date >= two_years_ago:
+                    stock_data, created = StockData.objects.update_or_create(
+                        stock_symbol=symbol,
+                        date=date,
+                        defaults={
+                            'open_price': price_data['1. open'],
+                            'close_price': price_data['4. close'],
+                            'high_price': price_data['2. high'],
+                            'low_price': price_data['3. low'],
+                            'volume': price_data['5. volume'],
+                        }
+                    )
 
-                stock_data_list.append({
-                    'date': date_str,
-                    'open': price_data['1. open'],
-                    'close': price_data['4. close'],
-                    'high': price_data['2. high'],
-                    'low': price_data['3. low'],
-                    'volume': price_data['5. volume'],
-                })
+                    stock_data_list.append({
+                        'date': date_str,
+                        'open': price_data['1. open'],
+                        'close': price_data['4. close'],
+                        'high': price_data['2. high'],
+                        'low': price_data['3. low'],
+                        'volume': price_data['5. volume'],
+                    })
 
             return stock_data_list
 
