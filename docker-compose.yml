@@ -1,0 +1,15 @@
+version: '3'
+services:
+  db:
+    image: postgres:13
+    environment:
+      POSTGRES_DB: trial_task_db
+      POSTGRES_USER: trial_task_user
+      POSTGRES_PASSWORD: batman11214
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+volumes:
+  postgres_data:

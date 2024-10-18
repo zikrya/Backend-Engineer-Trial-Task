@@ -42,8 +42,8 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    "rest_framework",  # Django Rest Framework for API creation
-    "stocks_app",  # Our custom app for stock data handling
+    "rest_framework",
+    "stocks_app",
 ]
 
 MIDDLEWARE = [
