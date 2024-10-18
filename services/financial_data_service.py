@@ -23,6 +23,7 @@ class FinancialDataService:
         try:
             response = requests.get(BASE_URL, params=params)
             response.raise_for_status()
+
             data = response.json()
 
             if 'Time Series (Daily)' not in data:
@@ -30,10 +31,12 @@ class FinancialDataService:
 
             time_series = data['Time Series (Daily)']
 
+            stock_data_list = []
+
             for date_str, price_data in time_series.items():
                 date = datetime.strptime(date_str, '%Y-%m-%d').date()
 
-                StockData.objects.update_or_create(
+                stock_data, created = StockData.objects.update_or_create(
                     stock_symbol=symbol,
                     date=date,
                     defaults={
@@ -44,7 +47,17 @@ class FinancialDataService:
                         'volume': price_data['5. volume'],
                     }
                 )
-            return f"Data for {symbol} fetched successfully."
+
+                stock_data_list.append({
+                    'date': date_str,
+                    'open': price_data['1. open'],
+                    'close': price_data['4. close'],
+                    'high': price_data['2. high'],
+                    'low': price_data['3. low'],
+                    'volume': price_data['5. volume'],
+                })
+
+            return stock_data_list
 
         except requests.exceptions.RequestException as e:
             raise SystemExit(e)

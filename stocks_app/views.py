@@ -6,8 +6,13 @@ def fetch_data_view(request, symbol):
     if request.method == 'GET':
         try:
             symbol = symbol.upper()
-            message = FinancialDataService.fetch_stock_data(symbol)
-            return JsonResponse({'message': message}, status=200)
+            stock_data = FinancialDataService.fetch_stock_data(symbol)
+
+            if isinstance(stock_data, str):
+                return JsonResponse({'error': stock_data}, status=500)
+
+            return JsonResponse({'data': stock_data}, status=200)
+
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=500)
 
