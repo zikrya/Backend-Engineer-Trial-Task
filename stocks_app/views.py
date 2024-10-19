@@ -3,6 +3,7 @@ from django.http import JsonResponse, HttpResponse
 from services.financial_data_service import FinancialDataService
 from services.backtesting_service import BacktestingService
 from services.prediction_service import PredictionService
+from services.report_service import ReportService
 
 def fetch_data_view(request, symbol):
     if request.method == 'GET':
@@ -44,6 +45,23 @@ def predict_stock_view(request, symbol):
             }, status=200)
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=500)
+
+def generate_report_view(request, symbol):
+
+    report_format = request.GET.get('format', 'json')
+
+    if report_format == 'json':
+        report = ReportService.generate_json_report(symbol)
+        return JsonResponse(report, status=200)
+
+    elif report_format == 'pdf':
+        pdf_report = ReportService.generate_pdf_report(symbol)
+        response = HttpResponse(pdf_report, content_type='application/pdf')
+        response['Content-Disposition'] = f'attachment; filename="{symbol}_report.pdf"'
+        return response
+
+    else:
+        return JsonResponse({'error': 'Invalid format requested. Use "json" or "pdf".'}, status=400)
 
 def stocks_home_view(request):
     return HttpResponse("Welcome to the Stocks API! Use /stocks/fetch/<symbol> to get stock data.")
