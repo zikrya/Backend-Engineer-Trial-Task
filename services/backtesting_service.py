@@ -27,6 +27,11 @@ class BacktestingService:
         data.set_index('date', inplace=True)
         data['close_price'] = data['close_price'].astype(float)
 
+        if len(data) < long_window:
+            return {
+                "error": f"Not enough data to run the backtest for {symbol}."
+            }
+
         data = BacktestingService.calculate_moving_average(data, short_window, 'short_ma')
         data = BacktestingService.calculate_moving_average(data, long_window, 'long_ma')
 
