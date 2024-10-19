@@ -3,11 +3,13 @@ import os
 from datetime import datetime, timedelta
 from stocks_app.models import StockData
 from dotenv import load_dotenv
+import logging
 
 load_dotenv()
 
-ALPHA_VANTAGE_API_KEY = os.getenv('ALPHA_VANTAGE_API_KEY')
+logger = logging.getLogger(__name__)
 
+ALPHA_VANTAGE_API_KEY = os.getenv('ALPHA_VANTAGE_API_KEY')
 BASE_URL = 'https://www.alphavantage.co/query'
 
 class FinancialDataService:
@@ -26,12 +28,15 @@ class FinancialDataService:
 
             data = response.json()
 
+            if 'Note' in data and 'Please consider' in data['Note']:
+                logger.error(f"Rate limit exceeded for {symbol}.")
+                raise ValueError(f"Rate limit exceeded. Try again later.")
+
             if 'Time Series (Daily)' not in data:
                 raise ValueError(f"Invalid data received for {symbol}")
 
             time_series = data['Time Series (Daily)']
 
-            # 2 years ago from today
             two_years_ago = datetime.now().date() - timedelta(days=730)
 
             stock_data_list = []
@@ -64,7 +69,8 @@ class FinancialDataService:
             return stock_data_list
 
         except requests.exceptions.RequestException as e:
+            logger.error(f"Network request error: {e}")
             raise SystemExit(e)
         except ValueError as ve:
-            print(ve)
+            logger.error(f"Data processing error: {ve}")
             return str(ve)
