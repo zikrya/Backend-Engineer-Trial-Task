@@ -53,21 +53,29 @@ def predict_stock_view(request, symbol):
             return JsonResponse({'error': str(e)}, status=500)
 
 def generate_report_view(request, symbol):
-
     report_format = request.GET.get('format', 'json')
 
-    if report_format == 'json':
-        report = ReportService.generate_json_report(symbol)
-        return JsonResponse(report, status=200)
+    try:
+        if report_format == 'json':
+            report = ReportService.generate_json_report(symbol)
+            if 'error' in report:
+                return JsonResponse(report, status=400)
+            return JsonResponse(report, status=200)
 
-    elif report_format == 'pdf':
-        pdf_report = ReportService.generate_pdf_report(symbol)
-        response = HttpResponse(pdf_report, content_type='application/pdf')
-        response['Content-Disposition'] = f'attachment; filename="{symbol}_report.pdf"'
-        return response
+        elif report_format == 'pdf':
+            pdf_report = ReportService.generate_pdf_report(symbol)
+            if not pdf_report:
+                return JsonResponse({'error': 'Report generation failed. Check if data is available.'}, status=400)
+            response = HttpResponse(pdf_report, content_type='application/pdf')
+            response['Content-Disposition'] = f'attachment; filename="{symbol}_report.pdf"'
+            return response
 
-    else:
-        return JsonResponse({'error': 'Invalid format requested. Use "json" or "pdf".'}, status=400)
+        else:
+            return JsonResponse({'error': 'Invalid format requested. Use "json" or "pdf".'}, status=400)
+
+    except ValueError as e:
+        logger.error(f"Error generating report for {symbol}: {e}")
+        return JsonResponse({'error': str(e)}, status=500)
 
 def stocks_home_view(request):
     return HttpResponse("Welcome to the Stocks API! Use /stocks/fetch/<symbol> to get stock data.")
