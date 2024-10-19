@@ -4,6 +4,9 @@ from services.financial_data_service import FinancialDataService
 from services.backtesting_service import BacktestingService
 from services.prediction_service import PredictionService
 from services.report_service import ReportService
+import logging
+
+logger = logging.getLogger(__name__)
 
 def fetch_data_view(request, symbol):
     if request.method == 'GET':
@@ -29,9 +32,10 @@ def run_backtest_view(request, symbol):
 
         summary = BacktestingService.run_backtest(symbol, initial_investment)
 
-        if isinstance(summary, str):
-            return JsonResponse({'error': summary}, status=400)
+        if 'error' in summary:
+            return JsonResponse({'error': summary['error']}, status=400)
 
+        logger.info(f"Backtest run for {symbol} completed successfully: {summary}")
         return JsonResponse(summary, status=200)
 
 def predict_stock_view(request, symbol):
