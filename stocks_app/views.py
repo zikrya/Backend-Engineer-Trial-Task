@@ -43,11 +43,13 @@ def predict_stock_view(request, symbol):
     if request.method == 'GET':
         try:
             predictions = PredictionService.predict_stock_prices(symbol)
+            logger.info(f"Predictions generated for {symbol}")
             return JsonResponse({
                 'symbol': symbol,
                 'predictions': list(predictions),
             }, status=200)
         except Exception as e:
+            logger.error(f"Error predicting stock prices for {symbol}: {e}")
             return JsonResponse({'error': str(e)}, status=500)
 
 def generate_report_view(request, symbol):
