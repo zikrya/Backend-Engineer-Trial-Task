@@ -6,17 +6,17 @@ from stocks_app.models import StockData, PredictionData
 
 class PredictionService:
     @staticmethod
-    def load_model(symbol):
-        """Load the pre-trained machine learning model for the given symbol."""
-        model_path = f'models/{symbol}_stock_price_model.pkl'
+    def load_combined_model():
+
+        model_path = 'models/combined_stock_price_model.pkl'
         if os.path.exists(model_path):
             return joblib.load(model_path)
         else:
-            raise FileNotFoundError(f"Model for {symbol} not found.")
+            raise FileNotFoundError("Combined model not found.")
 
     @staticmethod
     def get_historical_data(symbol, days=60):
-        """Fetch historical stock data for the past X days from StockData."""
+
         historical_data = StockData.objects.filter(stock_symbol=symbol).order_by('-date')[:days]
         data = np.array([record.close_price for record in historical_data])
         dates = [record.date for record in historical_data]
@@ -30,7 +30,8 @@ class PredictionService:
         X_train_days = np.arange(len(X_train)).reshape(-1, 1)
         Y_train_prices = X_train
 
-        model = PredictionService.load_model(symbol)
+        model = PredictionService.load_combined_model()
+
         X_pred_days = np.arange(len(X_train_days), len(X_train_days) + days).reshape(-1, 1)
         predicted_prices = model.predict(X_pred_days)
 

@@ -4,7 +4,6 @@ import django
 import numpy as np
 import joblib
 
-# Django setup
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'trial_task.settings')
 django.setup()
@@ -12,30 +11,38 @@ django.setup()
 from ml.linear_regression import LinearRegression
 from stocks_app.models import StockData
 
-def get_historical_data(symbol, days=60):
-    """Fetch historical stock data for the past X days."""
-    historical_data = StockData.objects.filter(stock_symbol=symbol).order_by('-date')[:days]
-    data = np.array([float(record.close_price) for record in historical_data])
-    return data[::-1]
+def get_combined_historical_data(symbols, days=60):
+    """Fetch and combine historical stock data for multiple symbols."""
+    all_data = []
+    all_symbols = []
 
-def train_model(symbol, days=60):
-    """Train the linear regression model for the given stock symbol."""
-    # Get historical data for training
-    X_train = get_historical_data(symbol, days=days)
-    X_train_days = np.arange(len(X_train)).reshape(-1, 1)  # Feature: day numbers
-    Y_train_prices = X_train  # Target: stock prices
+    for symbol in symbols:
+        historical_data = StockData.objects.filter(stock_symbol=symbol).order_by('-date')[:days]
+        data = np.array([float(record.close_price) for record in historical_data])
+        all_data.append(data[::-1])  # Reversing to get oldest first
+        all_symbols.append([symbol] * len(data))  # Adding stock symbol as a feature
 
-    # Initialize and train the model
+    # Combine all data into one dataset
+    combined_data = np.concatenate(all_data)
+    combined_symbols = np.concatenate(all_symbols)
+    return combined_data, combined_symbols
+
+def train_combined_model(symbols, days=60):
+
+    X_train, stock_symbols = get_combined_historical_data(symbols, days=days)
+
+    X_train_days = np.arange(len(X_train)).reshape(-1, 1)
+
+    Y_train_prices = X_train
+
     model = LinearRegression(learning_rate=0.0001, iterations=1000)
     model.fit(X_train_days, Y_train_prices)
 
-    # Save the model with the symbol name
-    save_dir = 'models'
+    save_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'models')
     os.makedirs(save_dir, exist_ok=True)
-    model_path = os.path.join(save_dir, f'{symbol}_stock_price_model.pkl')  # Save with symbol name
+    model_path = os.path.join(save_dir, 'combined_stock_price_model.pkl')
     joblib.dump(model, model_path)
 
-    print(f"Model trained and saved successfully for {symbol} at {model_path}!")
+    print(f"Combined model trained and saved successfully at {model_path}!")
 
-# Example usage
-train_model('AAPL')
+train_combined_model(['AAPL', 'GOOG', 'MSFT', 'TSLA', 'AMZN'])
