@@ -2,6 +2,9 @@ from decimal import Decimal
 from stocks_app.models import StockData
 import pandas as pd
 from services.financial_data_service import FinancialDataService
+import logging
+
+logger = logging.getLogger(__name__)
 
 class BacktestingService:
     @staticmethod
@@ -14,11 +17,12 @@ class BacktestingService:
         stock_data = StockData.objects.filter(stock_symbol=symbol)
 
         if not stock_data.exists():
-            print(f"Fetching data for {symbol} before running the backtest.")
+            logger.info(f"No data found for {symbol}. Fetching stock data.")
             FinancialDataService.fetch_stock_data(symbol)
             stock_data = StockData.objects.filter(stock_symbol=symbol)
 
         if not stock_data.exists():
+            logger.error(f"No data available for backtesting for {symbol}.")
             return {
                 "error": f"No data available for backtesting for {symbol}."
             }
@@ -28,6 +32,7 @@ class BacktestingService:
         data['close_price'] = data['close_price'].astype(float)
 
         if len(data) < long_window:
+            logger.error(f"Not enough data to run the backtest for {symbol}.")
             return {
                 "error": f"Not enough data to run the backtest for {symbol}."
             }
@@ -52,12 +57,14 @@ class BacktestingService:
                 cash = Decimal(0)
                 position = 1
                 trade_count += 1
+                logger.info(f"Buying {shares_held} shares at {data.iloc[i]['close_price']} on {data.index[i]}")
 
             elif position == 1 and short_ma > long_ma:
                 cash = shares_held * Decimal(data.iloc[i]['close_price'])
                 shares_held = Decimal(0)
                 position = 0
                 trade_count += 1
+                logger.info(f"Selling shares at {data.iloc[i]['close_price']} on {data.index[i]}")
 
             current_value = cash + shares_held * Decimal(data.iloc[i]['close_price'])
             if current_value > peak_value:
@@ -78,4 +85,5 @@ class BacktestingService:
             'trades_executed': trade_count,
         }
 
+        logger.info(f"Backtest completed for {symbol}: {summary}")
         return summary
