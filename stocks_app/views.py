@@ -2,6 +2,7 @@ from django.shortcuts import render
 from django.http import JsonResponse, HttpResponse
 from services.financial_data_service import FinancialDataService
 from services.backtesting_service import BacktestingService
+from services.prediction_service import PredictionService
 
 def fetch_data_view(request, symbol):
     if request.method == 'GET':
@@ -31,6 +32,18 @@ def run_backtest_view(request, symbol):
             return JsonResponse({'error': summary}, status=400)
 
         return JsonResponse(summary, status=200)
+
+def predict_stock_view(request, symbol):
+    """API endpoint to predict stock prices for the next 30 days."""
+    if request.method == 'GET':
+        try:
+            predictions = PredictionService.predict_stock_prices(symbol)
+            return JsonResponse({
+                'symbol': symbol,
+                'predictions': list(predictions),
+            }, status=200)
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
 
 def stocks_home_view(request):
     return HttpResponse("Welcome to the Stocks API! Use /stocks/fetch/<symbol> to get stock data.")
