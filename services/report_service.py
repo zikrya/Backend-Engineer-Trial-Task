@@ -4,7 +4,6 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import io
 import base64
-from datetime import datetime
 from stocks_app.models import StockData, PredictionData
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
@@ -15,27 +14,37 @@ from services.backtesting_service import BacktestingService
 from services.prediction_service import PredictionService
 from django.core.cache import cache
 
+
 class ReportService:
     @staticmethod
     def fetch_actual_data(symbol):
-        stock_data = StockData.objects.filter(stock_symbol=symbol).order_by('-date')[:30]
-        if not stock_data.exists():
-            raise ValueError(f"No stock data available for {symbol}")
-        dates = [data.date for data in stock_data]
-        prices = [data.close_price for data in stock_data]
-        return dates[::-1], prices[::-1]
+        try:
+            stock_data = StockData.objects.filter(stock_symbol=symbol).order_by('-date')[:30]
+            if not stock_data.exists():
+                raise ValueError(f"No stock data available for {symbol}")
+            dates = [data.date for data in stock_data]
+            prices = [data.close_price for data in stock_data]
+            return dates[::-1], prices[::-1]
+        except Exception as e:
+            raise ValueError(f"Error fetching actual data: {e}")
 
     @staticmethod
     def fetch_predicted_data(symbol):
-        predicted_data = PredictionData.objects.filter(stock_symbol=symbol).order_by('date')
-        if not predicted_data.exists():
-            raise ValueError(f"No predicted data available for {symbol}")
-        dates = [data.date for data in predicted_data]
-        prices = [data.predicted_price for data in predicted_data]
-        return dates, prices
+        try:
+            predicted_data = PredictionData.objects.filter(stock_symbol=symbol).order_by('date')
+            if not predicted_data.exists():
+                raise ValueError(f"No predicted data available for {symbol}")
+            dates = [data.date for data in predicted_data]
+            prices = [data.predicted_price for data in predicted_data]
+            return dates, prices
+        except Exception as e:
+            raise ValueError(f"Error fetching predicted data: {e}")
 
     @staticmethod
     def generate_graph(actual_dates, actual_prices, predicted_dates, predicted_prices):
+        if not actual_dates or not predicted_dates:
+            raise ValueError("Cannot generate graph without data")
+
         fig, ax1 = plt.subplots(figsize=(10, 5))
 
         ax1.plot(actual_dates, actual_prices, label='Actual Prices', color='blue', marker='o')
@@ -57,6 +66,8 @@ class ReportService:
         buffer.seek(0)
 
         graph_base64 = base64.b64encode(buffer.getvalue()).decode('utf-8')
+
+        plt.close()
         buffer.close()
 
         return graph_base64
@@ -67,9 +78,9 @@ class ReportService:
             DataFetchingService.ensure_data_fetched(symbol)
             backtest_result = BacktestingService.run_backtest(symbol, initial_investment=10000)
             PredictionService.predict_stock_prices(symbol)
-        except ValueError as e:
-            raise ValueError(f"Error ensuring data is ready: {str(e)}")
-        return backtest_result
+            return backtest_result
+        except Exception as e:
+            raise ValueError(f"Error ensuring data is ready: {e}")
 
     @staticmethod
     def generate_json_report(symbol):
@@ -110,14 +121,13 @@ class ReportService:
             actual_dates, actual_prices = ReportService.fetch_actual_data(symbol)
             predicted_dates, predicted_prices = ReportService.fetch_predicted_data(symbol)
         except ValueError as e:
-            return None  # Handle error in view
+            return None
 
         graph_base64 = ReportService.generate_graph(actual_dates, actual_prices, predicted_dates, predicted_prices)
 
         buffer = BytesIO()
         pdf = canvas.Canvas(buffer, pagesize=letter)
 
-        # Adding title and metadata
         pdf.setTitle(f"{symbol} Stock Report")
         pdf.setFont("Helvetica-Bold", 18)
         pdf.drawString(100, 750, f"Stock Report for {symbol}")
