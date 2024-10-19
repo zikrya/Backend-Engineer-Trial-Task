@@ -3,6 +3,7 @@ import os
 import joblib
 from datetime import timedelta
 from stocks_app.models import StockData, PredictionData
+from services.data_fetching_service import DataFetchingService
 
 class PredictionService:
     @staticmethod
@@ -25,6 +26,8 @@ class PredictionService:
     @staticmethod
     def predict_stock_prices(symbol, days=30):
 
+        DataFetchingService.ensure_data_fetched(symbol)
+
         X_train, dates = PredictionService.get_historical_data(symbol)
 
         X_train_days = np.arange(len(X_train)).reshape(-1, 1)
@@ -41,7 +44,7 @@ class PredictionService:
 
     @staticmethod
     def store_predictions(symbol, last_date, predicted_prices):
-        """Store predicted stock prices in the PredictionData model."""
+
         for i, predicted_price in enumerate(predicted_prices):
             prediction_date = last_date + timedelta(days=i+1)
             PredictionData.objects.update_or_create(

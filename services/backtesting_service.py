@@ -1,6 +1,7 @@
 from decimal import Decimal
 from stocks_app.models import StockData
 import pandas as pd
+from services.financial_data_service import FinancialDataService
 
 class BacktestingService:
     @staticmethod
@@ -10,14 +11,20 @@ class BacktestingService:
 
     @staticmethod
     def run_backtest(symbol, initial_investment, short_window=50, long_window=200):
-        stock_data = StockData.objects.filter(stock_symbol=symbol).order_by('date')
+        stock_data = StockData.objects.filter(stock_symbol=symbol)
 
         if not stock_data.exists():
-            return "No data available for backtesting."
+            print(f"Fetching data for {symbol} before running the backtest.")
+            FinancialDataService.fetch_stock_data(symbol)
+            stock_data = StockData.objects.filter(stock_symbol=symbol)
+
+        if not stock_data.exists():
+            return {
+                "error": f"No data available for backtesting for {symbol}."
+            }
 
         data = pd.DataFrame(list(stock_data.values('date', 'close_price')))
         data.set_index('date', inplace=True)
-
         data['close_price'] = data['close_price'].astype(float)
 
         data = BacktestingService.calculate_moving_average(data, short_window, 'short_ma')
@@ -40,6 +47,7 @@ class BacktestingService:
                 cash = Decimal(0)
                 position = 1
                 trade_count += 1
+
             elif position == 1 and short_ma > long_ma:
                 cash = shares_held * Decimal(data.iloc[i]['close_price'])
                 shares_held = Decimal(0)
