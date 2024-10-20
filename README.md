@@ -1,4 +1,4 @@
-# Django Stock Prediction and Backtesting System
+# Trial Task
 
 This is a Django-based backend system designed to fetch financial data, run a basic backtesting strategy, integrate with a pre-trained machine learning model for stock price predictions, and generate reports. The system is containerized, deployed on AWS using EC2 and RDS, and uses GitHub Actions for CI/CD.
 
