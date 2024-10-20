@@ -78,4 +78,4 @@ def generate_report_view(request, symbol):
         return JsonResponse({'error': str(e)}, status=500)
 
 def stocks_home_view(request):
-    return HttpResponse("Welcome to the Stocks API! Use /stocks/fetch/<symbol> to get stock data.")
+    return HttpResponse("Welcome to the Stocks API!")
