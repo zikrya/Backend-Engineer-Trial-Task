@@ -7,7 +7,7 @@ on:
 
 jobs:
   deploy:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest  # Keep this as 'ubuntu-latest' because GitHub Actions is running on Ubuntu, not Amazon Linux.
 
     steps:
     - name: Checkout code
@@ -25,15 +25,14 @@ jobs:
 
     - name: Clean up existing Docker installations
       run: |
-        sudo microdnf remove -y containerd docker docker-engine docker.io containerd runc
-        sudo microdnf autoremove -y
-        sudo microdnf update -y
+        sudo yum remove -y docker docker-engine docker.io containerd runc
 
     - name: Install Docker
       run: |
-        sudo microdnf install docker -y
+        sudo yum install docker -y
         sudo systemctl start docker
         sudo systemctl enable docker
+        sudo usermod -aG docker ec2-user
 
     - name: Install Docker Compose
       run: |
@@ -42,7 +41,7 @@ jobs:
 
     - name: Install Git
       run: |
-        sudo microdnf install git -y
+        sudo yum install git -y
 
     - name: SSH and Deploy
       env:
