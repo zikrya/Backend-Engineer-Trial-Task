@@ -6,7 +6,6 @@ class FinancialDataServiceTest(TestCase):
 
     @patch('services.financial_data_service.requests.get')
     def test_fetch_stock_data_success(self, mock_get):
-        # Mocking the API response
         mock_get.return_value.status_code = 200
         mock_get.return_value.json.return_value = {
             "Time Series (Daily)": {
@@ -27,7 +26,6 @@ class FinancialDataServiceTest(TestCase):
 
     @patch('services.financial_data_service.requests.get')
     def test_handle_api_rate_limit(self, mock_get):
-        # Simulate API rate limiting
         mock_get.return_value.status_code = 200
         mock_get.return_value.json.return_value = {
             "Note": "Thank you for using Alpha Vantage! Please consider our premium subscription..."

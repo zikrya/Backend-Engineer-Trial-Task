@@ -18,7 +18,6 @@ class StockDataFactory(factory.django.DjangoModelFactory):
 class BacktestingServiceTest(TestCase):
 
     def setUp(self):
-        # Seed data for backtesting
         StockDataFactory.create_batch(300, stock_symbol='AAPL')
 
     def test_backtest_success(self):
