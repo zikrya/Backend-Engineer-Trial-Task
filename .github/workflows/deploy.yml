@@ -25,13 +25,13 @@ jobs:
 
     - name: Clean up existing Docker installations
       run: |
-        sudo yum remove -y containerd docker docker-engine docker.io containerd runc
-        sudo yum autoremove -y
-        sudo yum update -y
+        sudo dnf remove -y containerd docker docker-engine docker.io containerd runc
+        sudo dnf autoremove -y
+        sudo dnf update -y
 
     - name: Install Docker
       run: |
-        sudo yum install docker -y
+        sudo dnf install docker -y
         sudo systemctl start docker
         sudo systemctl enable docker
 
@@ -42,7 +42,7 @@ jobs:
 
     - name: Install Git
       run: |
-        sudo yum install git -y
+        sudo dnf install git -y
 
     - name: SSH and Deploy
       env:
