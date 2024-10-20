@@ -40,6 +40,10 @@ jobs:
         sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
         sudo chmod +x /usr/local/bin/docker-compose
 
+    - name: Install Git
+      run: |
+        sudo yum install git -y
+
     - name: SSH and Deploy
       env:
         SSH_PRIVATE_KEY: ${{ secrets.EC2_SSH_KEY }}
@@ -48,7 +52,7 @@ jobs:
         echo "$SSH_PRIVATE_KEY" > key.pem
         chmod 400 key.pem
         ssh -o StrictHostKeyChecking=no -i key.pem ec2-user@${EC2_PUBLIC_IP} << 'EOF'
-          cd /path_to_your_project
+          cd /home/ec2-user/trial_task  # Update with your actual path
           git pull origin main
           docker-compose down
           docker-compose up -d --build
