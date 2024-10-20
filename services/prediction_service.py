@@ -54,6 +54,8 @@ class PredictionService:
         X_pred_days = np.arange(len(X_train_days), len(X_train_days) + days).reshape(-1, 1)
         predicted_prices = model.predict(X_pred_days)
 
+        predicted_prices = np.array(predicted_prices)
+
         # Sanity check
         if np.any(predicted_prices < 0):
             logger.error(f"Invalid predicted prices for {symbol}. Predicted prices should not be negative.")
